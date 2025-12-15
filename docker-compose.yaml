@@ -88,6 +88,33 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  postgres_pagila:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pagila
+    ports:
+      - "5433:5432" # Проброс на 5433, чтобы не конфликтовать с локальным PG
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "admin" ]
+      interval: 5s
+      retries: 5
+
+    # 2. Целевая база для Sakila (MySQL)
+  mysql_sakila:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: sakila
+    ports:
+      - "3307:3306" # Проброс на 3307
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 5s
+      retries: 5
+
   postgres:
     image: postgres:16
     environment:

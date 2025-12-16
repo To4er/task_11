@@ -1,6 +1,4 @@
 /logs
 dags/__pycache__
 .env
-dags/sql/pagila-insert-data.sql
-dags/sql/sakila-data.sql
 .idea/

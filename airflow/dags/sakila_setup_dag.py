@@ -1,7 +1,8 @@
 from airflow.sdk import dag
 from airflow.providers.standard.operators.bash import BashOperator
 from datetime import datetime
-from include.config import SAKILA_URL, EXTRACT_DIR, SAKILA_SCHEMA_FILE, SAKILA_DATA_FILE, SAKILA_CONN_ID
+
+from include.config import SAKILA_URL, EXTRACT_DIR, SAKILA_SCHEMA_PATH, SAKILA_DATA_PATH, SAKILA_CONN_ID, SAKILA_ARCHIVE_PATH
 
 default_args = {
     'owner': 'airflow',
@@ -13,7 +14,8 @@ default_args = {
     start_date=datetime(2025, 1, 1),
     catchup=False,
     tags=['sakila'],
-    schedule=None
+    schedule=None,
+    template_searchpath=[EXTRACT_DIR]
 )
 def sakila_setup_dag():
 
@@ -27,8 +29,8 @@ def sakila_setup_dag():
     download_files_task = BashOperator(
         task_id='download_files',
         bash_command=f"""
-            curl -L "{SAKILA_URL}" -o /tmp/sakila-db.tar.gz && \
-            tar -xzf /tmp/sakila-db.tar.gz -C {EXTRACT_DIR}
+            curl -L "{SAKILA_URL}" -o {SAKILA_ARCHIVE_PATH} && \
+            tar -xzf {SAKILA_ARCHIVE_PATH} -C {EXTRACT_DIR}
             """,
     )
     create_schema_task = BashOperator(
@@ -37,7 +39,7 @@ def sakila_setup_dag():
             mysql -h $DB_HOST \
                   -P $DB_PORT \
                   -u $DB_USER \
-                  -e "source {SAKILA_SCHEMA_FILE}"
+                  -e "source {EXTRACT_DIR}/{SAKILA_SCHEMA_PATH}"
             """,
         env=db_env
     )
@@ -48,7 +50,7 @@ def sakila_setup_dag():
                 mysql -h $DB_HOST \
                   -P $DB_PORT \
                   -u $DB_USER \
-                  -e "source {SAKILA_DATA_FILE}"
+                  -e "source {EXTRACT_DIR}/{SAKILA_DATA_PATH}"
             """,
         env=db_env,
     )
